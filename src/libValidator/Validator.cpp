@@ -131,17 +131,17 @@ bool Validator::CheckCreatedTransactionFromLookup(const Transaction& tx) {
       // return false;
     }
 
-    if (Transaction::GetTransactionType(tx) == Transaction::CONTRACT_CALL) {
-      unsigned int correct_shard_to =
-          Transaction::GetShardIndex(tx.GetToAddr(), numShards);
-      if (correct_shard_to != correct_shard_from) {
-        LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
-                  "The fromShard " << correct_shard_from << " and toShard "
-                                   << correct_shard_to
-                                   << " is different for the call SC txn");
-        return false;
-      }
-    }
+    // if (Transaction::GetTransactionType(tx) == Transaction::CONTRACT_CALL) {
+    //   unsigned int correct_shard_to =
+    //       Transaction::GetShardIndex(tx.GetToAddr(), numShards);
+    //   if (correct_shard_to != correct_shard_from) {
+    //     LOG_EPOCH(WARNING, m_mediator.m_currentEpochNum,
+    //               "The fromShard " << correct_shard_from << " and toShard "
+    //                                << correct_shard_to
+    //                                << " is different for the call SC txn");
+    //     return false;
+    //   }
+    // }
   }
 
   if (tx.GetCode().size() > MAX_CODE_SIZE_IN_BYTES) {

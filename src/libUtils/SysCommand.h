@@ -184,6 +184,8 @@ class SysCommand {
                          std::string& output = cmd_output_place_holder,
                          int& pid = pid_place_holder,
                          const std::string& cwd = "") {
+    LOG_MARKER();
+    LOG_GENERAL(INFO, "ExecuteCmd " << cmd);
     switch (option) {
       case WITHOUT_OUTPUT:
         return ExecuteCmdWithoutOutput(cmd, cwd);

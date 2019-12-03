@@ -323,7 +323,9 @@ bool LookupServer::StartCollectorThread() {
 
 bool ValidateTxn(const Transaction& tx, const Address& fromAddr,
                  const Account* sender, const uint128_t& gasPrice) {
+  LOG_GENERAL(INFO, "Received TX with CHAIN_ID " << DataConversion::UnpackA(tx.GetVersion()));
   if (DataConversion::UnpackA(tx.GetVersion()) != CHAIN_ID) {
+    LOG_GENERAL(INFO, "CHAIN_ID incorrect: got " << DataConversion::UnpackA(tx.GetVersion()) << " expected " << CHAIN_ID);
     throw JsonRpcException(ServerBase::RPC_VERIFY_REJECTED,
                            "CHAIN_ID incorrect");
   }
@@ -430,17 +432,20 @@ Json::Value LookupServer::CreateTransaction(
         break;
       case Transaction::ContractType::CONTRACT_CREATION:
         if (!ENABLE_SC) {
+          LOG_GENERAL(INFO, "Tried creating contract, but smart contracts are disabled.");
           throw JsonRpcException(RPC_MISC_ERROR, "Smart contract is disabled");
         }
         if (ARCHIVAL_LOOKUP) {
           mapIndex = SEND_TYPE::ARCHIVAL_SEND_SHARD;
         }
+        LOG_GENERAL(INFO, "CONTRACT_CREATION transaction");
         ret["Info"] = "Contract Creation txn, sent to shard";
         ret["ContractAddress"] =
             Account::GetAddressForContract(fromAddr, sender->GetNonce()).hex();
         break;
       case Transaction::ContractType::CONTRACT_CALL: {
         if (!ENABLE_SC) {
+          LOG_GENERAL(INFO, "Tried calling contract, but smart contracts are disabled.");
           throw JsonRpcException(RPC_MISC_ERROR, "Smart contract is disabled");
         }
 
@@ -453,20 +458,23 @@ Json::Value LookupServer::CreateTransaction(
                                  "Non - contract address called");
         }
 
-        unsigned int to_shard =
-            Transaction::GetShardIndex(tx.GetToAddr(), num_shards);
+        // unsigned int to_shard =
+        //     Transaction::GetShardIndex(tx.GetToAddr(), num_shards);
         bool sendToDs = false;
         if (_json.isMember("priority")) {
           sendToDs = _json["priority"].asBool();
         }
-        if ((to_shard == shard) && !sendToDs) {
+
+        // commutative
+        if (true) {
           if (ARCHIVAL_LOOKUP) {
             mapIndex = SEND_TYPE::ARCHIVAL_SEND_SHARD;
           }
           ret["Info"] =
-              "Contract Txn, Shards Match of the sender "
-              "and reciever";
-        } else {
+              "Contract Txn, commutative transition";
+
+        // non-commutative
+        } else if (sendToDs) {
           if (ARCHIVAL_LOOKUP) {
             mapIndex = SEND_TYPE::ARCHIVAL_SEND_DS;
           } else {
@@ -474,6 +482,7 @@ Json::Value LookupServer::CreateTransaction(
           }
           ret["Info"] = "Contract Txn, Sent To Ds";
         }
+
       } break;
       case Transaction::ContractType::ERROR:
         throw JsonRpcException(RPC_INVALID_ADDRESS_OR_KEY,
@@ -482,6 +491,14 @@ Json::Value LookupServer::CreateTransaction(
       default:
         throw JsonRpcException(RPC_MISC_ERROR, "Txn type unexpected");
     }
+
+    // Report sharding information
+    ret["src"] = tx.GetSenderAddr().hex();
+    ret["dst"] = tx.GetToAddr().hex();
+    ret["num_shards"] = num_shards;
+    ret["proc_shard"] = mapIndex;
+    ret["nonce"] = to_string(tx.GetNonce());
+
     if (!targetFunc(tx, mapIndex)) {
       throw JsonRpcException(RPC_DATABASE_ERROR,
                              "Txn could not be added as database exceeded "

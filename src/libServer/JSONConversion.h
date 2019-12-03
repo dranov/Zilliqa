@@ -43,6 +43,7 @@ class JSONConversion {
       const Json::Value& _json);
   // Convert a Tx to JSON object
   static const Json::Value convertTxtoJson(const TransactionWithReceipt& twr);
+  static const Json::Value convertBareTxtoJson(const Transaction& tx);
   // Convert a node to json
   static const Json::Value convertNode(const PairOfNode& node);
   // conver a node with reputation to json

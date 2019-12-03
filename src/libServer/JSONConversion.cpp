@@ -304,6 +304,33 @@ const Json::Value JSONConversion::convertTxtoJson(
   return _json;
 }
 
+const Json::Value JSONConversion::convertBareTxtoJson(
+    const Transaction& tx) {
+  Json::Value _json;
+
+  _json["ID"] = tx.GetTranID().hex();
+  _json["version"] = to_string(tx.GetVersion());
+  _json["nonce"] = to_string(tx.GetNonce());
+  _json["toAddr"] = tx.GetToAddr().hex();
+  _json["senderPubKey"] =
+      static_cast<string>(tx.GetSenderPubKey());
+  _json["amount"] = tx.GetAmount().str();
+  _json["signature"] = static_cast<string>(tx.GetSignature());
+  _json["gasPrice"] = tx.GetGasPrice().str();
+  _json["gasLimit"] = to_string(tx.GetGasLimit());
+
+  if (!tx.GetCode().empty()) {
+    _json["code"] =
+        DataConversion::CharArrayToString(tx.GetCode());
+  }
+  if (!tx.GetData().empty()) {
+    _json["data"] =
+        DataConversion::CharArrayToString(tx.GetData());
+  }
+
+  return _json;
+}
+
 const Json::Value JSONConversion::convertNode(const PairOfNode& node) {
   Json::Value _json;
   _json["PubKey"] = static_cast<string>(node.first);
