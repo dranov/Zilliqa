@@ -21,3 +21,20 @@ message ProtoScillaQuery
     repeated bytes indices  = 3;
     bool ignoreval          = 4;
 }
+
+message ProtoScillaMergeRequest
+{
+    message ValueMerge
+    {
+        bytes ancestor  = 1;
+        bytes temp      = 2;
+        bytes delta     = 3;
+    }
+
+    repeated ValueMerge values  = 1;
+}
+
+message ProtoScillaMergeResponse
+{
+    repeated bytes values = 1;
+}

@@ -878,8 +878,22 @@ void ContractStorage2::UpdateStateDatasAndToDeletes(
   lock_guard<mutex> g(m_stateDataMutex);
 
   if (temp) {
+    // (m_stateDataMap[state.first], t_stateDataMap[state.first], state.second, MERGE_PROC_ENUM)
+    ProtoScillaMergeRequest mr;
+
+    // Compute merge request
     for (const auto& state : t_states) {
-      t_stateDataMap[state.first] = state.second;
+      auto ancestor = m_stateDataMap[state.first];
+      auto temp = t_stateDataMap[state.first];
+      auto delta = state.second;
+
+      ProtoScillaMergeRequest_ValueMerge* proto_vm = mr.add_values();
+      proto_vm->set_ancestor(ancestor.data(), ancestor.size());
+      proto_vm->set_temp(temp.data(), temp.size());
+      proto_vm->set_delta(delta.data(), delta.size());
+
+      // t_stateDataMap[state.first] = state.second;
+
       auto pos = t_indexToBeDeleted.find(state.first);
       if (pos != t_indexToBeDeleted.end()) {
         t_indexToBeDeleted.erase(pos);
@@ -888,6 +902,48 @@ void ContractStorage2::UpdateStateDatasAndToDeletes(
     for (const auto& index : toDeleteIndices) {
       t_indexToBeDeleted.emplace(index);
     }
+
+    // TODO: error checking for all of this
+    // Store merger request to file
+    // TODO: make more robust: randomness + delete file
+    string mr_filename = "/tmp/" + addr.hex() + ".merge";
+    ofstream mr_file(mr_filename, std::fstream::binary);
+    mr.SerializeToOstream(&mr_file);
+    mr_file.close();
+
+    // Call merger process
+    string output_filename = mr_filename + ".done";
+    string cmdStr = string("") +
+      "/home/dranov/Developer/scilla/bin/delta_merger " +
+      mr_filename + " " + output_filename;
+    LOG_GENERAL(INFO, cmdStr);
+
+    if (!SysCommand::ExecuteCmd(SysCommand::WITHOUT_OUTPUT, cmdStr)) {
+      LOG_GENERAL(WARNING, "Failed to merge state delta!");
+    } else {
+      ifstream rs_file(output_filename, std::fstream::binary);
+      ProtoScillaMergeResponse rs;
+      rs.ParseFromIstream(&rs_file);
+
+      if ((size_t) rs.values_size() != t_states.size()) {
+        LOG_GENERAL(WARNING, "Merged state delta (len = " << rs.values_size() <<
+         ") has different length than t_states (len = " << t_states.size() << ")");
+        return;
+      }
+
+      // Need to iterate over rs and t_states at the same time
+      // std::map (t_states) guarantees a stable iteration order
+      for (auto it = std::make_pair(t_states.begin(), rs.values().begin());
+          it.first != t_states.end(); ++it.first, ++it.second) {
+
+        auto state = (*it.first);
+        auto merged = (*it.second);
+        auto key = state.first;
+        bytes merged_value(merged.begin(), merged.end());
+        t_stateDataMap[state.first] = merged_value;
+      }
+    }
+
   } else {
     for (const auto& state : t_states) {
       if (revertible) {
