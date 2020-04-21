@@ -6,7 +6,7 @@
         <ENABLE_DO_REJOIN>true</ENABLE_DO_REJOIN>
         <LOOKUP_NODE_MODE>false</LOOKUP_NODE_MODE>
         <MAX_ENTRIES_FOR_DIAGNOSTIC_DATA>25</MAX_ENTRIES_FOR_DIAGNOSTIC_DATA>
-        <CHAIN_ID>2</CHAIN_ID>
+        <CHAIN_ID>0</CHAIN_ID>
         <GENESIS_PUBKEY>02AAE728127EB5A30B07D798D5236251808AD2C8BA3F18B230449D0C938969B552</GENESIS_PUBKEY>
         <UPGRADE_TARGET_DS_NUM>1</UPGRADE_TARGET_DS_NUM>
         <!-- Do not add a trailing "/" in the path-->
@@ -156,16 +156,16 @@
     </jsonrpc>
     <network_composition>
         <!-- Shard size will be automatically calculated if COMM_SIZE = 0 -->
-        <COMM_SIZE>10</COMM_SIZE>
+        <COMM_SIZE>3</COMM_SIZE>
         <NUM_DS_ELECTION>1</NUM_DS_ELECTION>
         <!-- DS Node must meet this minimum threshold to remain in the committee -->
         <DS_PERFORMANCE_THRESHOLD_PERCENT>0.15</DS_PERFORMANCE_THRESHOLD_PERCENT>
         <!-- Maximum number of Byzantine DS Nodes to remove each round. Must be smaller than
              NUM_DS_ELECTION -->
-        <NUM_DS_BYZANTINE_REMOVED>1</NUM_DS_BYZANTINE_REMOVED>
+        <NUM_DS_BYZANTINE_REMOVED>0</NUM_DS_BYZANTINE_REMOVED>
         <!-- SHARD_SIZE_TOLERANCE_LO must be smaller than COMM_SIZE -->
-        <SHARD_SIZE_TOLERANCE_LO>1</SHARD_SIZE_TOLERANCE_LO>
-        <SHARD_SIZE_TOLERANCE_HI>1</SHARD_SIZE_TOLERANCE_HI>
+        <SHARD_SIZE_TOLERANCE_LO>0</SHARD_SIZE_TOLERANCE_LO>
+        <SHARD_SIZE_TOLERANCE_HI>0</SHARD_SIZE_TOLERANCE_HI>
     </network_composition>
     <p2pcomm>
         <BROADCAST_INTERVAL>60</BROADCAST_INTERVAL>
@@ -234,8 +234,8 @@
         <CONTRACT_STATES_MIGRATED>false</CONTRACT_STATES_MIGRATED>
     </recovery>
     <smart_contract>
-        <ENABLE_SC>false</ENABLE_SC>
-        <SCILLA_ROOT/>
+        <ENABLE_SC>true</ENABLE_SC>
+        <SCILLA_ROOT>/home/dranov/Developer/scilla</SCILLA_ROOT>
         <SCILLA_CHECKER>bin/scilla-checker</SCILLA_CHECKER>
         <SCILLA_BINARY>bin/scilla-runner</SCILLA_BINARY>
         <SCILLA_FILES>scilla_files</SCILLA_FILES>
@@ -247,7 +247,7 @@
         <INPUT_MESSAGE_JSON>input_message.json</INPUT_MESSAGE_JSON>
         <OUTPUT_JSON>output.json</OUTPUT_JSON>
         <INPUT_CODE>input.scilla</INPUT_CODE>
-        <ENABLE_SCILLA_MULTI_VERSION>true</ENABLE_SCILLA_MULTI_VERSION>
+        <ENABLE_SCILLA_MULTI_VERSION>false</ENABLE_SCILLA_MULTI_VERSION>
         <FIELDS_MAP_DEPTH_INDICATOR>_fields_map_depth</FIELDS_MAP_DEPTH_INDICATOR>
         <LOG_SC>true</LOG_SC>
     </smart_contract>
@@ -300,7 +300,7 @@
     <!-- These are the genesis accounts -->
     <accounts>
         <account>
-            <wallet_address>cc02a3c906612cc5bdb087a30e6093c9f0aa04fc</wallet_address>
+            <wallet_address>1c2c7516dac2140c47cbae264e8349bb7c07a534</wallet_address>
         </account>
     </accounts>
     <!-- For constants.xml, the remaining constants below are auto-populated -->

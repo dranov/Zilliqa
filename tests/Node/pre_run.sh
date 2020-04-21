@@ -31,7 +31,7 @@ ulimit -s unlimited;
 
 python tests/Zilliqa/test_zilliqa_local.py stop
 python tests/Zilliqa/test_zilliqa_local.py setup 20
-python tests/Zilliqa/test_zilliqa_local.py prestart 10
+python tests/Zilliqa/test_zilliqa_local.py prestart 5
 
 # clean up persistence storage
 rm -rf lookup_local_run/node*

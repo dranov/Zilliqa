@@ -878,21 +878,29 @@ void ContractStorage2::UpdateStateDatasAndToDeletes(
   lock_guard<mutex> g(m_stateDataMutex);
 
   if (temp) {
-    // (m_stateDataMap[state.first], t_stateDataMap[state.first], state.second, MERGE_PROC_ENUM)
+    /* Construct a merge request (mr). For each field, we provide the merger
+     * process with 3 values: the committed value of the field at the end of the
+     * previous final block (`ancestor`), the current value as a result of
+     * processing (`temp`), and the value from the shard state delta (`delta`).
+     *
+     * IMPORTANT: The delta merger assumes that `temp` and `delta` are both
+     * descendants of `ancestor` (three-way-req).
+    */
     ProtoScillaMergeRequest mr;
-
-    // Compute merge request
     for (const auto& state : t_states) {
       auto ancestor = m_stateDataMap[state.first];
       auto temp = t_stateDataMap[state.first];
+      // If no `temp`, ensure three-way-req is satisfied
+      if (temp.size() == 0) {
+        temp = ancestor;
+      }
       auto delta = state.second;
 
       ProtoScillaMergeRequest_ValueMerge* proto_vm = mr.add_values();
       proto_vm->set_ancestor(ancestor.data(), ancestor.size());
       proto_vm->set_temp(temp.data(), temp.size());
       proto_vm->set_delta(delta.data(), delta.size());
-
-      // t_stateDataMap[state.first] = state.second;
+      // TODO: pass field annotation to delta merger
 
       auto pos = t_indexToBeDeleted.find(state.first);
       if (pos != t_indexToBeDeleted.end()) {
@@ -904,21 +912,21 @@ void ContractStorage2::UpdateStateDatasAndToDeletes(
     }
 
     // TODO: error checking for all of this
-    // Store merger request to file
-    // TODO: make more robust: randomness + delete file
-    string mr_filename = "/tmp/" + addr.hex() + ".merge";
+    // Store merger request to file with random name
+    string mr_filename = "/tmp/" + addr.hex() + "_" + dev::h256().random().hex() + ".merge";
     ofstream mr_file(mr_filename, std::fstream::binary);
     mr.SerializeToOstream(&mr_file);
     mr_file.close();
 
     // Call merger process
     string output_filename = mr_filename + ".done";
+    // TODO: do not hardcore path; use config value
     string cmdStr = string("") +
       "/home/dranov/Developer/scilla/bin/delta_merger " +
       mr_filename + " " + output_filename;
-    LOG_GENERAL(INFO, cmdStr);
 
-    if (!SysCommand::ExecuteCmd(SysCommand::WITHOUT_OUTPUT, cmdStr)) {
+    string cmdOutput;
+    if (!SysCommand::ExecuteCmd(SysCommand::WITH_OUTPUT, cmdStr, cmdOutput)) {
       LOG_GENERAL(WARNING, "Failed to merge state delta!");
     } else {
       ifstream rs_file(output_filename, std::fstream::binary);
@@ -931,7 +939,9 @@ void ContractStorage2::UpdateStateDatasAndToDeletes(
         return;
       }
 
-      // Need to iterate over rs and t_states at the same time
+      LOG_GENERAL(INFO, "Merge output:\n" << cmdOutput);
+
+      // Iterate over rs and t_states at the same time
       // std::map (t_states) guarantees a stable iteration order
       for (auto it = std::make_pair(t_states.begin(), rs.values().begin());
           it.first != t_states.end(); ++it.first, ++it.second) {
@@ -940,10 +950,17 @@ void ContractStorage2::UpdateStateDatasAndToDeletes(
         auto merged = (*it.second);
         auto key = state.first;
         bytes merged_value(merged.begin(), merged.end());
+
+        LOG_GENERAL(INFO, "Merge " <<
+          "state key: " << state.first <<
+          " ancestor: " << DataConversion::CharArrayToString(m_stateDataMap[state.first]) <<
+          " temp: " << DataConversion::CharArrayToString(t_stateDataMap[state.first]) <<
+          " delta: " << DataConversion::CharArrayToString(state.second) <<
+          " merged: " << merged);
+
         t_stateDataMap[state.first] = merged_value;
       }
     }
-
   } else {
     for (const auto& state : t_states) {
       if (revertible) {
@@ -953,6 +970,11 @@ void ContractStorage2::UpdateStateDatasAndToDeletes(
           r_stateDataMap[state.first] = {};
         }
       }
+      LOG_GENERAL(INFO, "Commit " <<
+          "state key: " << state.first <<
+          " old: " << DataConversion::CharArrayToString(m_stateDataMap[state.first]) <<
+          " new: " << DataConversion::CharArrayToString(state.second));
+
       m_stateDataMap[state.first] = state.second;
       auto pos = m_indexToBeDeleted.find(state.first);
       if (pos != m_indexToBeDeleted.end()) {
@@ -1045,7 +1067,9 @@ bool ContractStorage2::CommitStateDB() {
     }
   }
 
-  m_stateDataMap.clear();
+  // XXX FIXME TODO do not commit this as it stands
+  // will grow memory indefinitely
+  // m_stateDataMap.clear();
   m_indexToBeDeleted.clear();
 
   InitTempState();
