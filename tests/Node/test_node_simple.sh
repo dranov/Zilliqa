@@ -26,7 +26,7 @@ ulimit -Sc unlimited;
 ulimit -Hc unlimited;
 ulimit -s unlimited; 
 
-num_ds=4
+num_ds=1
 num_shards=4
 total_nodes=$((num_ds * num_shards))
 
