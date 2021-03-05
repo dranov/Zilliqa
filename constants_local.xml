@@ -161,7 +161,7 @@
     </jsonrpc>
     <network_composition>
         <!-- Shard size will be automatically calculated if COMM_SIZE = 0 -->
-        <COMM_SIZE>1</COMM_SIZE>
+        <COMM_SIZE>3</COMM_SIZE>
         <NUM_DS_ELECTION>1</NUM_DS_ELECTION>
         <!-- DS Node must meet this minimum threshold to remain in the committee -->
         <DS_PERFORMANCE_THRESHOLD_PERCENT>0.15</DS_PERFORMANCE_THRESHOLD_PERCENT>
@@ -169,7 +169,7 @@
              NUM_DS_ELECTION -->
         <NUM_DS_BYZANTINE_REMOVED>0</NUM_DS_BYZANTINE_REMOVED>
         <!-- SHARD_SIZE_TOLERANCE_LO must be smaller than COMM_SIZE -->
-        <SHARD_SIZE_TOLERANCE_LO>0</SHARD_SIZE_TOLERANCE_LO>
+        <SHARD_SIZE_TOLERANCE_LO>1</SHARD_SIZE_TOLERANCE_LO>
         <SHARD_SIZE_TOLERANCE_HI>1</SHARD_SIZE_TOLERANCE_HI>
         <STORE_DS_COMMITTEE_INTERVAL>10</STORE_DS_COMMITTEE_INTERVAL>
     </network_composition>
